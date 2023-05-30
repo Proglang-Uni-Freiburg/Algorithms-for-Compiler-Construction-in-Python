@@ -1,2 +1,2 @@
 # Algorithms-for-Compiler-Construction-in-Python
-A masterprojekt Repository
+A masterprojekt repository
