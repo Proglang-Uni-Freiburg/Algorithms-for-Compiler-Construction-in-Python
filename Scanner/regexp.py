@@ -2,41 +2,55 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import cast, Iterable
 
+
 @dataclass(frozen=True)
 class Regexp:
     """abstract class for AST of regular expressions"""
+
     pass
 
+
 @dataclass(frozen=True)
-class Null (Regexp):
+class Null(Regexp):
     """empty set: {}"""
+
     pass
 
+
 @dataclass(frozen=True)
-class Epsilon (Regexp):
+class Epsilon(Regexp):
     """empty word: { "" }"""
 
+
 @dataclass(frozen=True)
-class Symbol (Regexp):
+class Symbol(Regexp):
     """single symbol: { "a" }"""
+
     sym: str
+
 
 @dataclass(frozen=True)
 class Concat(Regexp):
     """concatenation: r1.r2"""
+
     left: Regexp
     right: Regexp
+
 
 @dataclass(frozen=True)
 class Alternative(Regexp):
     """alternative: r1|r2"""
+
     left: Regexp
     right: Regexp
+
 
 @dataclass(frozen=True)
 class Repeat(Regexp):
     """Kleene star: r*"""
+
     body: Regexp
+
 
 def concat(r1: Regexp, r2: Regexp) -> Regexp:
     match (r1, r2):
@@ -51,6 +65,7 @@ def concat(r1: Regexp, r2: Regexp) -> Regexp:
         case _:
             return Concat(r1, r2)
 
+
 def alternative(r1: Regexp, r2: Regexp) -> Regexp:
     match (r1, r2):
         case (Null(), _):
@@ -62,6 +77,7 @@ def alternative(r1: Regexp, r2: Regexp) -> Regexp:
         case _:
             return Alternative(r1, r2)
 
+
 def repeat(r: Regexp) -> Regexp:
     match r:
         case Null() | Epsilon():
@@ -71,32 +87,41 @@ def repeat(r: Regexp) -> Regexp:
         case _:
             return Repeat(r)
 
+
 def optional(r: Regexp) -> Regexp:
     return alternative(r, Epsilon())
+
 
 def repeat_one(r: Regexp) -> Regexp:
     return concat(r, repeat(r))
 
+
 def concat_list(rs: Iterable[Regexp]) -> Regexp:
     return reduce(lambda out, r: concat(out, r), rs, cast(Regexp, Epsilon()))
 
-def alternative_list(rs : Iterable[Regexp]) -> Regexp:
+
+def alternative_list(rs: Iterable[Regexp]) -> Regexp:
     return reduce(lambda out, r: alternative(out, r), rs, cast(Regexp, Null()))
 
+
 def char_range_regexp(c1: str, c2: str) -> Regexp:
-    return alternative_list(map(Symbol, map(chr, range(ord(c1), ord(c2)+1))))
+    return alternative_list(map(Symbol, map(chr, range(ord(c1), ord(c2) + 1))))
+
 
 def string_regexp(s: str) -> Regexp:
     return concat_list(map(Symbol, s))
 
+
 def class_regexp(s: str) -> Regexp:
     return alternative_list(map(Symbol, s))
+
 
 def is_null(r: Regexp) -> bool:
     match r:
         case Null():
             return True
     return False
+
 
 def accepts_empty(r: Regexp) -> bool:
     match r:
@@ -114,6 +139,7 @@ def accepts_empty(r: Regexp) -> bool:
             return True
     raise Exception(f"Unexpected case: {r}")
 
+
 def after_symbol(s: str, r: Regexp) -> Regexp:
     """produces regexp after r consumes symbol s"""
     match r:
@@ -124,11 +150,14 @@ def after_symbol(s: str, r: Regexp) -> Regexp:
         case Alternative(r1, r2):
             return alternative(after_symbol(s, r1), after_symbol(s, r2))
         case Concat(r1, r2):
-            return alternative(concat(after_symbol(s, r1), r2),
-                   after_symbol(s, r2) if accepts_empty(r1) else Null())
+            return alternative(
+                concat(after_symbol(s, r1), r2),
+                after_symbol(s, r2) if accepts_empty(r1) else Null(),
+            )
         case Repeat(r1):
             return concat(after_symbol(s, r1), Repeat(r1))
     raise Exception(f"Unexpected case: {r}")
+
 
 def matches(r: Regexp, ss: str) -> bool:
     i = 0
