@@ -7,7 +7,9 @@ from typing import Any, Callable, Iterator, Optional, Generic, TypeVar, Union, c
 ### ineffective, nondeterministic parser ###
 
 
-def td_parse(g: Grammar[NTS, TS], alpha: list[Symbol], inp: list[TS]) -> Iterator[list[TS]]:
+def td_parse(
+    g: Grammar[NTS, TS], alpha: list[Symbol], inp: list[TS]
+) -> Iterator[list[TS]]:
     match alpha:
         case []:
             yield inp
@@ -207,6 +209,7 @@ class Follow_K_Analysis(First_K_Analysis[NTS, TS, Element]):
                                 rst = self.rhs_analysis(self.first_k, alpha[i + 1 :])
                                 fs[n] = self.join(fs[n], self.concat(rst, fs[nt]))
 
+
 ### LL(k) parser ###
 
 
@@ -246,3 +249,12 @@ def accept(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> Optional[list[TS]]:
         return inp
 
     return accept_symbol(NT(g.start), inp)
+
+
+def accept_from_string(
+    g: Grammar[NTS, str], k: int, inp: str
+) -> tuple[Optional[str], str]:
+    result = accept(g, k, list(inp))
+    if result is None:
+        return None, inp
+    return inp[:len(inp)-len(result)], "".join(result)
