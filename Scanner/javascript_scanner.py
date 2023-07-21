@@ -107,6 +107,12 @@ def scan(ss: str) -> Iterator[Token]:
     return make_scanner(js_token, ss)
 
 
+def example1() -> None:
+    string = "   42..."
+    print(f'Example 1 with "{string}"')
+    print(js_token("   42...", 0))
+
+
 def example2() -> None:
     string = "return Segment (pi / 2)"
     print(f'Example 2 with "{string}"')
@@ -125,15 +131,10 @@ def example3() -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Example 1 with '   42...'")
-        print(js_token("   42...", 0))
-        print("\nExample 2 with 'return Segment (pi / 2)'")
-        sc = make_scanner(js_token, "return Segment (pi / 2)")
-        for ta in sc:
-            print(ta)
-        print('\nExample 3 with \'return "foobar\\"..."\'')
-        sc = make_scanner(js_token, 'return "foobar\\"..."')
-        for ta in sc:
-            print(ta)
+        example1()
+        print()
+        example2()
+        print()
+        example3()
         exit()
     print([x for x in scan(sys.argv[1])])

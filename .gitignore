@@ -161,3 +161,5 @@ cython_debug/
 
 *.swp
 todo
+Archive/
+Tests/

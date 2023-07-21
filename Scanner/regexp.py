@@ -3,6 +3,9 @@ from functools import reduce
 from typing import cast, Iterable
 
 
+### types and classes ###
+
+
 @dataclass(frozen=True)
 class Regexp:
     """abstract class for AST of regular expressions"""
@@ -50,6 +53,9 @@ class Repeat(Regexp):
     """Kleene star: r*"""
 
     body: Regexp
+
+
+### constructors and utilities ###
 
 
 def concat(r1: Regexp, r2: Regexp) -> Regexp:
@@ -114,6 +120,9 @@ def string_regexp(s: str) -> Regexp:
 
 def class_regexp(s: str) -> Regexp:
     return alternative_list(map(Symbol, s))
+
+
+### properties and functions ###
 
 
 def is_null(r: Regexp) -> bool:

@@ -3,6 +3,9 @@ from typing import Callable, Iterator
 from regexp import *
 
 
+### types and classes ###
+
+
 @dataclass(frozen=True)
 class Token:
     pass
@@ -32,6 +35,9 @@ class ScanError(Exception):
     pass
 
 
+### properties and functions ###
+
+
 def is_stuck(state: LexState) -> bool:
     return not state
 
@@ -47,6 +53,9 @@ def next_state(state: LexState, ss: str, i: int) -> LexState:
 
 def matched_rules(state: LexState) -> LexState:
     return [rule for rule in state if accepts_empty(rule.re)]
+
+
+### scanner ###
 
 
 @dataclass
