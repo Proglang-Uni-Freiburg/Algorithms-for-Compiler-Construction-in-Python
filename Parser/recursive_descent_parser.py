@@ -1,7 +1,8 @@
 from grammar import *
+from grammar_analysis import *
 from dataclasses import dataclass
 from functools import partial, reduce
-from typing import Any, Callable, Iterator, Optional, Generic, TypeVar, Union, cast
+from typing import Iterator, Optional, cast
 
 
 ### ineffective, nondeterministic parser ###
@@ -83,21 +84,6 @@ def update_first(g: Grammar[NTS, TS], es: EmptySet, fs: FirstSet):
         fs[n] = fn
 
 
-Key = TypeVar("Key")
-Value = TypeVar("Value")
-
-
-def fixed_point(
-    current_map: dict[Key, Value], update: Callable[[dict[Key, Value]], None]
-) -> dict[Key, Value]:
-    next_map = None
-    while next_map is None or any(current_map[k] != next_map[k] for k in current_map):
-        next_map = current_map
-        current_map = current_map.copy()
-        update(current_map)
-    return current_map
-
-
 def calculate_empty(g: Grammar[NTS, TS]) -> EmptySet:
     es = initial_empty(g)
     return fixed_point(es, partial(update_empty, g))
@@ -106,108 +92,6 @@ def calculate_empty(g: Grammar[NTS, TS]) -> EmptySet:
 def calculate_first(g: Grammar[NTS, TS], es: EmptySet) -> FirstSet:
     fs = initial_first(g)
     return fixed_point(fs, partial(update_first, g, es))
-
-
-### calculating first_k/follow_k sets ###
-
-
-Element = TypeVar("Element")  # semilattice element
-
-
-@dataclass(frozen=True)
-class GrammarAnalysis(Generic[NTS, TS, Element]):
-    # abstract semilattice methods
-    def bottom(self) -> Element:
-        raise NotImplementedError
-
-    def empty(self) -> Element:
-        raise NotImplementedError
-
-    def singleton(self, term: tuple[TS]) -> Element:
-        raise NotImplementedError
-
-    def join(self, x: Element, y: Element) -> Element:
-        raise NotImplementedError
-
-    def concat(self, x: Element, y: Element) -> Element:
-        raise NotImplementedError
-
-    def equal(self, x: Element, y: Element) -> bool:
-        raise NotImplementedError
-
-    def initial_analysis(self, g: Grammar[NTS, TS]) -> dict[NTS, Element]:
-        raise NotImplementedError
-
-    def update_analysis(self, g: Grammar[NTS, TS], fs: dict[NTS, Element]):
-        raise NotImplementedError
-
-    # reusable analysis methods
-    def rhs_analysis(self, fs: dict[NTS, Element], alpha: list[Symbol]):
-        r = self.empty()
-        for sym in alpha:
-            match sym:
-                case NT(nt):
-                    r = self.concat(r, fs[nt])
-                case ts:
-                    r = self.concat(r, self.singleton((ts,)))
-        return r
-
-    def run(self, g: Grammar[NTS, TS]) -> dict[NTS, Element]:
-        initial_map = self.initial_analysis(g)
-        update_map = partial(self.update_analysis, g)
-        return fixed_point(initial_map, update_map)
-
-
-@dataclass(frozen=True)
-class First_K_Analysis(GrammarAnalysis[NTS, TS, Element]):
-    k: int
-
-    def bottom(self):
-        return frozenset([])
-
-    def empty(self):
-        return frozenset([()])
-
-    def singleton(self, term):
-        return frozenset([term])
-
-    def join(self, sl1, sl2):
-        return sl1 | sl2
-
-    def concat(self, x, y):
-        return frozenset([(sx + sy)[: self.k] for sx in x for sy in y])
-
-    def equal(self, x, y):
-        return x == y
-
-    def initial_analysis(self, g):
-        return {n: self.bottom() for n in g.nonterminals}
-
-    def update_analysis(self, g, fs):
-        for rule in g.rules:
-            match rule:
-                case Production(nt, alpha):
-                    fs[nt] = self.join(self.rhs_analysis(fs, alpha), fs[nt])
-
-
-@dataclass(frozen=True)
-class Follow_K_Analysis(First_K_Analysis[NTS, TS, Element]):
-    first_k: dict[NTS, Element]
-
-    def initial_analysis(self, g):
-        r = super().initial_analysis(g)
-        r[g.start] = self.empty()
-        return r
-
-    def update_analysis(self, g, fs):
-        for rule in g.rules:
-            match rule:
-                case Production(nt, alpha):
-                    for i in range(len(alpha)):
-                        match alpha[i]:
-                            case NT(n):
-                                rst = self.rhs_analysis(self.first_k, alpha[i + 1 :])
-                                fs[n] = self.join(fs[n], self.concat(rst, fs[nt]))
 
 
 ### LL(k) parser ###

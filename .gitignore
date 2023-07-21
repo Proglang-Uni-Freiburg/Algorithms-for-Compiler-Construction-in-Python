@@ -163,3 +163,4 @@ cython_debug/
 todo
 Archive/
 Tests/
+grammar_analysis.py
