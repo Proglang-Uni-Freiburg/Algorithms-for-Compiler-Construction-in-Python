@@ -5,7 +5,7 @@ from functools import partial, reduce
 from typing import Iterator, Optional, cast
 
 
-### ineffective, nondeterministic parser ###
+### ineffective, nondeterministic top-down parser ###
 
 
 def td_parse(
@@ -23,7 +23,7 @@ def td_parse(
                 yield from td_parse(g, rest_alpha, inp[1:])
 
 
-def parse_from_string(g: Grammar[NTS, str], s: str) -> Iterator[list[str]]:
+def td_parse_from_string(g: Grammar[NTS, str], s: str) -> Iterator[list[str]]:
     return td_parse(g, [NT(g.start)], list(s))
 
 
@@ -97,14 +97,15 @@ def calculate_first(g: Grammar[NTS, TS], es: EmptySet) -> FirstSet:
 ### LL(k) parser ###
 
 
-def accept(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> Optional[list[TS]]:
-    fika = First_K_Analysis[NTS, TS](k)
-    first_k = fika.run(g)
-    foka = Follow_K_Analysis[NTS, TS](k, first_k)
+def ll_k_accept(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> Optional[list[TS]]:
+    fika = FirstKAnalysis[NTS, TS](k)
+    first_k_nt = fika.run(g)  # first_k for NT's
+    first_k = partial(fika.rhs_analysis, first_k_nt)  # complete first_k function
+    foka = FollowKAnalysis[NTS, TS](k, first_k_nt)
     follow_k = foka.run(g)
 
     def lookahead(rule: Production) -> frozenset[Symbol]:
-        return fika.concat(fika.rhs_analysis(first_k, rule.rhs), follow_k[rule.lhs])
+        return fika.concat(first_k(rule.rhs), follow_k[rule.lhs])
 
     def accept_symbol(sym: Symbol, inp: list[TS]) -> Optional[list[TS]]:
         match sym:
@@ -135,10 +136,10 @@ def accept(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> Optional[list[TS]]:
     return accept_symbol(NT(g.start), inp)
 
 
-def accept_from_string(
+def ll_k_parse_from_string(
     g: Grammar[NTS, str], k: int, inp: str
 ) -> tuple[Optional[str], str]:
-    result = accept(g, k, list(inp))
+    result = ll_k_accept(g, k, list(inp))
     if result is None:
         return None, inp
-    return inp[:len(inp)-len(result)], "".join(result)
+    return inp[: len(inp) - len(result)], "".join(result)

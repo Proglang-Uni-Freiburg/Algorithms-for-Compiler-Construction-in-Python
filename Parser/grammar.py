@@ -18,7 +18,7 @@ Symbol = Union[NT[NTS], TS]
 
 
 @dataclass(frozen=True)
-class Production(Generic[NTS]):
+class Production(Generic[NTS, TS]):
     lhs: NTS
     rhs: list[Symbol]
     ext: Any = None
@@ -28,11 +28,20 @@ class Production(Generic[NTS]):
 class Grammar(Generic[NTS, TS]):
     nonterminals: list[NTS]
     terminals: list[TS]
-    rules: list[Production]
+    rules: list[Production[NTS, TS]]
     start: NTS
 
     def productions_with_lhs(self, nts: NTS) -> list[Production]:
         return [rule for rule in self.rules if rule.lhs == nts]
+
+
+def start_separated(g: Grammar[NTS, TS], new_start: NTS) -> Grammar[NTS, TS]:
+    return Grammar(
+        g.nonterminals.copy(),
+        g.terminals.copy(),
+        g.rules + [Production(new_start, [g.start], lambda x: x)],
+        new_start,
+    )
 
 
 ### abstract syntax for arithmetic expressions ###
@@ -58,3 +67,6 @@ class Var(AST):
 @dataclass(frozen=True)
 class Constant(AST):
     val: int
+
+
+### ###

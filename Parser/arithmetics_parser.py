@@ -81,6 +81,7 @@ pretty = lambda sets: {
     key: {reduce(lambda x, y: x + y, v, "") for v in value}
     for key, value in sets.items()
 }
+
 es = calculate_empty(expr_grammar_)
 fs = pretty(calculate_first(expr_grammar_, es))
 
@@ -88,15 +89,15 @@ fs = pretty(calculate_first(expr_grammar_, es))
 ### first_1 sets calculation for expr_grammar_ using general method###
 
 
-first_1_analysis = First_K_Analysis[str, str](1)
+first_1_analysis = FirstKAnalysis[str, str](1)
 first_1 = pretty(first_1_analysis.run(expr_grammar_))
 
 
 ### using the LL(k) parser on expr_grammar_ ###
 
+### using the LR(0) parser on expr_grammar_ ###
 
-def accept_expr(inp: str) -> tuple[Optional[str], str]:
-    return accept_from_string(expr_grammar_, 1, inp)
+### using the LR(k) parser on expr_grammar_ ###
 
 
 if __name__ == "__main__":
@@ -107,5 +108,5 @@ if __name__ == "__main__":
         print(first_1)
         exit()
     arg = sys.argv[1]
-    result = accept_expr(arg)
+    result = ll_k_parse_from_string(expr_grammar_, 1, arg)
     print(f"Accepted '{result[0]}' with rest '{result[1]}'")
