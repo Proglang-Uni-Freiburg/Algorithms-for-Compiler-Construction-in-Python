@@ -98,9 +98,9 @@ def calculate_first(g: Grammar[NTS, TS], es: EmptySet) -> FirstSet:
 
 
 def accept(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> Optional[list[TS]]:
-    fika = First_K_Analysis[NTS, TS, frozenset[tuple[TS]]](k)
+    fika = First_K_Analysis[NTS, TS](k)
     first_k = fika.run(g)
-    foka = Follow_K_Analysis[NTS, TS, frozenset[tuple[TS]]](k, first_k)
+    foka = Follow_K_Analysis[NTS, TS](k, first_k)
     follow_k = foka.run(g)
 
     def lookahead(rule: Production) -> frozenset[Symbol]:

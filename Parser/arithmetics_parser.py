@@ -88,7 +88,7 @@ fs = pretty(calculate_first(expr_grammar_, es))
 ### first_1 sets calculation for expr_grammar_ using general method###
 
 
-first_1_analysis = First_K_Analysis[str, str, frozenset[tuple[str]]](1)
+first_1_analysis = First_K_Analysis[str, str](1)
 first_1 = pretty(first_1_analysis.run(expr_grammar_))
 
 
