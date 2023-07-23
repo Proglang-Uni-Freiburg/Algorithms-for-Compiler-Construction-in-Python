@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar, Any, Union, Generic
+from typing import TypeVar, Any, Union, Generic, cast
 
 
 ### context free grammars ###
@@ -20,15 +20,15 @@ Symbol = Union[NT[NTS], TS]
 @dataclass(frozen=True)
 class Production(Generic[NTS, TS]):
     lhs: NTS
-    rhs: list[Symbol]
+    rhs: tuple[Symbol,...]
     ext: Any = None
 
 
 @dataclass(frozen=True)
 class Grammar(Generic[NTS, TS]):
-    nonterminals: list[NTS]
-    terminals: list[TS]
-    rules: list[Production[NTS, TS]]
+    nonterminals: tuple[NTS,...]
+    terminals: tuple[TS,...]
+    rules: tuple[Production[NTS, TS],...]
     start: NTS
 
     def productions_with_lhs(self, nts: NTS) -> list[Production]:
@@ -36,10 +36,11 @@ class Grammar(Generic[NTS, TS]):
 
 
 def start_separated(g: Grammar[NTS, TS], new_start: NTS) -> Grammar[NTS, TS]:
+    new_production: Production[NTS, TS] = Production(new_start, (g.start,), lambda x: x)
     return Grammar(
-        g.nonterminals.copy(),
-        g.terminals.copy(),
-        g.rules + [Production(new_start, [g.start], lambda x: x)],
+        g.nonterminals + (new_start,),
+        g.terminals,
+        g.rules + (new_production,),
         new_start,
     )
 

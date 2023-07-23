@@ -29,7 +29,7 @@ def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> Optional[list[TS]]:
                 if len(candidates) > 1:
                     print("Grammar is not LL(" + str(k) + ")")
                 if len(candidates) > 0:
-                    return accept_list(candidates[0].rhs, inp)
+                    return accept_list(list(candidates[0].rhs), inp)
             case t:
                 if inp[:1] == [t]:
                     return inp[1:]

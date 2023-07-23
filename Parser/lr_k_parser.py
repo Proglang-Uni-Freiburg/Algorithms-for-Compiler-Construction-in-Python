@@ -3,7 +3,7 @@ from grammar_analysis import *
 from dataclasses import dataclass
 from functools import partial
 from typing import Callable, cast
-from lr_0_parser import is_final, State, Item
+from lr_0_parser import is_final, State, Item, shift_item
 
 
 ### continuation based LR(k) parser ###
@@ -39,7 +39,7 @@ def goto(
         g,
         k,
         first_k,
-        frozenset([item.shift() for item in state if item.can_shift(symbol)]),
+        frozenset([shift_item(item) for item in state if item.can_shift(symbol)]),
     )
 
 
@@ -55,14 +55,14 @@ def initial_state(
         first_k,
         frozenset(
             [
-                Item(rule, 0, cast(tuple[TS], ()))
+                Item(rule, 0, ())
                 for rule in g.productions_with_lhs(g.start)
             ]
         ),
     )
 
 
-def reducable_items(state: State, prefix: tuple[TS]) -> list[Item[NTS, TS]]:
+def reducable_items(state: State, prefix: tuple[TS,...]) -> list[Item[NTS, TS]]:
     items = []
     for item in state:
         if len(item.rhs_rest()) == 0 and item.lookahead == prefix:
@@ -103,7 +103,7 @@ def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> bool:
             )
 
         can_shift = len(inp) > 0 and inp[0] in next_terminals(state)
-        reducable = reducable_items(state, cast(tuple[TS], tuple(inp[:k])))
+        reducable = reducable_items(state, tuple(inp[:k]))
         if len(reducable) + can_shift > 1:
             print("Grammar is not LR(" + str(k) + ")")
         if can_shift:

@@ -13,7 +13,7 @@ def parse(
             yield inp
         case [NT(nt), *rest_alpha]:
             for rule in g.productions_with_lhs(nt):
-                for rest_inp in parse(g, rule.rhs, inp):
+                for rest_inp in parse(g, list(rule.rhs), inp):
                     yield from parse(g, rest_alpha, rest_inp)
         case [ts, *rest_alpha]:
             if inp and ts == inp[0]:

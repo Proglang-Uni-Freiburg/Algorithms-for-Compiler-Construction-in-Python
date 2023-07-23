@@ -10,19 +10,19 @@ from typing import cast
 class Item(Generic[NTS, TS]):
     rule: Production[NTS, TS]
     position: int
-    lookahead: tuple[TS]
+    lookahead: tuple[TS,...]
 
     def lhs(self) -> NTS:
         return self.rule.lhs
 
     def rhs(self) -> list[Symbol]:
-        return self.rule.rhs
+        return list(self.rule.rhs)
 
     def rhs_start(self) -> list[Symbol]:
-        return self.rule.rhs[: self.position]
+        return list(self.rule.rhs[: self.position])
 
     def rhs_rest(self) -> list[Symbol]:
-        return self.rule.rhs[self.position :]
+        return list(self.rule.rhs[self.position :])
 
     def can_shift(self, symbol: Symbol) -> bool:
         return (
@@ -30,8 +30,9 @@ class Item(Generic[NTS, TS]):
             and self.rule.rhs[self.position] == symbol
         )
 
-    def shift(self) -> Item:
-        return Item(self.rule, self.position + 1, self.lookahead)
+
+def shift_item(item: Item) -> Item:
+    return Item(item.rule, item.position + 1, item.lookahead)
 
 
 ### stack based LR(0) parser ###
@@ -49,13 +50,13 @@ def compute_closure(g: Grammar[NTS, TS], state: State) -> State:
             match item.rhs_rest():
                 case [NT(nt), *rest]:
                     for rule in g.productions_with_lhs(nt):
-                        new_closure.add(Item(rule, 0, cast(tuple[TS], ())))
+                        new_closure.add(Item(rule, 0, ()))
     return frozenset(closure)
 
 
 def goto(g: Grammar[NTS, TS], state: State, symbol: Symbol) -> State:
     return compute_closure(
-        g, frozenset([item.shift() for item in state if item.can_shift(symbol)])
+        g, frozenset([shift_item(item) for item in state if item.can_shift(symbol)])
     )
 
 
@@ -63,7 +64,7 @@ def initial_state(g: Grammar[NTS, TS]) -> State:
     rules = g.productions_with_lhs(g.start)
     if len(rules) != 1:
         raise Exception("Grammar is not start-separated! (use function in grammar.py)")
-    return compute_closure(g, frozenset([Item(rules[0], 0, cast(tuple[TS], ()))]))
+    return compute_closure(g, frozenset([Item(rules[0], 0, ())]))
 
 
 def reducable_items(state: State) -> list[Item[NTS, TS]]:
@@ -107,5 +108,5 @@ def parse(g: Grammar[NTS, TS], inp: list[TS]) -> bool:
     return rec_parse([initial_state(g)], inp)
 
 # convenience
-def parse_from_string(g: Grammar[NTS, str], k: int, inp: str) -> bool:
+def parse_from_string(g: Grammar[NTS, str], inp: str) -> bool:
     return parse(g, list(inp))
