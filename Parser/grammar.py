@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar, Any, Union, Generic, cast, Callable
+from typing import TypeVar, Any, Union, Generic, cast, Callable, Optional
 
 
 ### context free grammars ###
@@ -17,16 +17,19 @@ class NT(Generic[NTS]):
 Symbol = Union[NT[NTS], TS]
 
 
-# this function is used instead of lambda x: x for simpler debugging
-def identity(x: Any) -> Any:
-    return x
-
-
 @dataclass(frozen=True)
 class Production(Generic[NTS, TS]):
     lhs: NTS
     rhs: tuple[Symbol, ...]
-    ext: Callable[..., Any] = identity
+    ext: Optional[Callable[..., Any]] = None
+
+    def arity(self) -> int:
+        counter = 0
+        for symbol in self.rhs:
+            match symbol:
+                case NT(nt):
+                    counter += 1
+        return counter
 
 
 @dataclass(frozen=True)
@@ -41,9 +44,7 @@ class Grammar(Generic[NTS, TS]):
 
 
 def start_separated(g: Grammar[NTS, TS], new_start: NTS) -> Grammar[NTS, TS]:
-    new_production: Production[NTS, TS] = Production(
-        new_start, (NT(g.start),), identity
-    )
+    new_production: Production[NTS, TS] = Production(new_start, (NT(g.start),))
     return Grammar(
         g.nonterminals + (new_start,),
         g.terminals,

@@ -78,10 +78,13 @@ def nactive(state: State) -> int:
     return max(map(lambda item: len(item.rhs_start()), state), default=0)
 
 
-def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> bool:
+def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> tuple[bool, Any]:
     fika = FirstKAnalysis[NTS, TS](k)
     first_k_nt = fika.run(g)  # first_k for NT's
     first_k = partial(fika.rhs_analysis, first_k_nt)  # complete first_k function
+    constructs: list[
+        Any
+    ] = []  # used to store sub parts of the current parse structure (e.g. an AST)
 
     def rec_parse(
         state: State,  # we recursively assume that state is a closure
@@ -91,27 +94,40 @@ def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> bool:
         if is_final(g, state) and len(inp) == 0:
             return True
 
-        def c0(symbol: Symbol, inp: list[TS]) -> bool:
+        def c0(
+            symbol: Symbol,
+            inp: list[TS],
+        ) -> bool:
             next_state = goto(g, k, first_k, state, symbol)
             return rec_parse(
                 next_state, [c0] + continuations[: nactive(next_state) - 1], inp
             )
 
         can_shift = len(inp) > 0 and inp[0] in next_terminals(state)
-        reducable = reducable_items(state, tuple(inp[:k]))
+        reducable = cast(list[Item[NTS, TS]], reducable_items(state, tuple(inp[:k])))
         if len(reducable) + can_shift > 1:
             print("Grammar is not LR(" + str(k) + ")")
         if can_shift:
             return c0(inp[0], inp[1:])
         if len(reducable) > 0:
-            return ([c0] + continuations)[len(reducable[0].rhs())](
-                NT(reducable[0].lhs()), inp
+            rule = reducable[0].rule
+            arity = rule.arity()
+            nonlocal constructs
+
+            # Apply constructor of the reducable rule to the stored constructs
+            # and replace them by the new construct to build up the parse structure.
+            construct = (
+                None if rule.ext is None else rule.ext(*constructs[:arity][::-1])
             )
+            constructs = [construct] + constructs[arity:]
+
+            return ([c0] + continuations)[len(rule.rhs)](NT(rule.lhs), inp)
         return False
 
-    return rec_parse(initial_state(g, k, first_k), [], inp)
+    result = rec_parse(initial_state(g, k, first_k), [], inp)
+    return result, constructs if result else None
 
 
 # convenience
-def parse_from_string(g: Grammar[NTS, str], k: int, inp: str) -> bool:
+def parse_from_string(g: Grammar[NTS, str], k: int, inp: str) -> tuple[bool, Any]:
     return parse(g, k, list(inp))
