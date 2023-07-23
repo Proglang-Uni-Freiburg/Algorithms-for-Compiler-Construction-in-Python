@@ -94,7 +94,7 @@ def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> bool:
         def c0(symbol: Symbol, inp: list[TS]) -> bool:
             next_state = goto(g, k, first_k, state, symbol)
             return rec_parse(
-                next_state, [c0] + continuations[: nactive(next_state)-1], inp
+                next_state, [c0] + continuations[: nactive(next_state) - 1], inp
             )
 
         can_shift = len(inp) > 0 and inp[0] in next_terminals(state)

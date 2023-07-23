@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar, Any, Union, Generic, cast
+from typing import TypeVar, Any, Union, Generic, cast, Callable
 
 
 ### context free grammars ###
@@ -17,11 +17,16 @@ class NT(Generic[NTS]):
 Symbol = Union[NT[NTS], TS]
 
 
+# this function is used instead of lambda x: x for simpler debugging
+def identity(x: Any) -> Any:
+    return x
+
+
 @dataclass(frozen=True)
 class Production(Generic[NTS, TS]):
     lhs: NTS
     rhs: tuple[Symbol, ...]
-    ext: Any = None
+    ext: Callable[..., Any] = identity
 
 
 @dataclass(frozen=True)
@@ -33,11 +38,6 @@ class Grammar(Generic[NTS, TS]):
 
     def productions_with_lhs(self, nts: NTS) -> list[Production]:
         return [rule for rule in self.rules if rule.lhs == nts]
-
-
-# this function is used instead of lambda x: x for simpler debugging
-def identity(x: Any) -> Any:
-    return x
 
 
 def start_separated(g: Grammar[NTS, TS], new_start: NTS) -> Grammar[NTS, TS]:

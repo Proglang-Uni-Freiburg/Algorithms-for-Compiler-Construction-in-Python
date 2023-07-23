@@ -18,6 +18,9 @@ class Item(Generic[NTS, TS]):
     def rhs(self) -> list[Symbol]:
         return list(self.rule.rhs)
 
+    def ext(self) -> Callable[..., Any]:
+        return self.rule.ext
+
     def rhs_start(self) -> list[Symbol]:
         return list(self.rule.rhs[: self.position])
 
