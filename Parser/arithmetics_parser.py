@@ -10,6 +10,7 @@ from lr_k_parser import parse_from_string as lr_k_parse_from_string
 ### left-recurive example grammar ###
 
 
+# LR(1) Grammar
 expr_grammar = Grammar[str, str](
     ("T", "E", "F"),
     ("x", "2", "(", ")", "+", "*"),
@@ -28,7 +29,7 @@ expr_grammar = Grammar[str, str](
 
 ### non-left-recursive equivalent of expr_grammar ###
 
-
+# LL(1) / LR(1) Grammar
 expr_grammar_ = Grammar[str, str](
     ("T", "T'", "E", "E'", "F"),
     ("x", "2", "(", ")", "+", "*"),
@@ -104,8 +105,9 @@ if __name__ == "__main__":
     arg = sys.argv[1]
     result: Any = ll_k_parse_from_string(expr_grammar_, 1, arg)
     print(f"LL(k)-parsed '{result[0]}' with rest '{result[1]}'")
-    start_separated_grammar = start_separated(expr_grammar_, "S'")
-    result = lr_0_parse_from_string(start_separated_grammar, arg)
-    print(f"LR(0)-parsed '{result}'")
+    start_separated_grammar = start_separated(expr_grammar, "S'")
+    # expr_grammar is not LR(0) thus
+    # result = lr_0_parse_from_string(start_separated_grammar, arg)
+    # print(f"LR(0)-parsed '{result}'")
     result = lr_k_parse_from_string(start_separated_grammar, 1, arg)
     print(f"LL(k)-parsed '{result}'")

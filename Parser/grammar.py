@@ -20,23 +20,30 @@ Symbol = Union[NT[NTS], TS]
 @dataclass(frozen=True)
 class Production(Generic[NTS, TS]):
     lhs: NTS
-    rhs: tuple[Symbol,...]
+    rhs: tuple[Symbol, ...]
     ext: Any = None
 
 
 @dataclass(frozen=True)
 class Grammar(Generic[NTS, TS]):
-    nonterminals: tuple[NTS,...]
-    terminals: tuple[TS,...]
-    rules: tuple[Production[NTS, TS],...]
+    nonterminals: tuple[NTS, ...]
+    terminals: tuple[TS, ...]
+    rules: tuple[Production[NTS, TS], ...]
     start: NTS
 
     def productions_with_lhs(self, nts: NTS) -> list[Production]:
         return [rule for rule in self.rules if rule.lhs == nts]
 
 
+# this function is used instead of lambda x: x for simpler debugging
+def identity(x: Any) -> Any:
+    return x
+
+
 def start_separated(g: Grammar[NTS, TS], new_start: NTS) -> Grammar[NTS, TS]:
-    new_production: Production[NTS, TS] = Production(new_start, (g.start,), lambda x: x)
+    new_production: Production[NTS, TS] = Production(
+        new_start, (NT(g.start),), identity
+    )
     return Grammar(
         g.nonterminals + (new_start,),
         g.terminals,

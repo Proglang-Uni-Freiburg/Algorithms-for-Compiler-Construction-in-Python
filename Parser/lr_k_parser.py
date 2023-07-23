@@ -15,17 +15,17 @@ def compute_closure(
     first_k: Callable[[list[Symbol]], Lookaheads],
     state: State,
 ) -> State:
-    closure = set(state)
-    new_closure: set[Item[NTS, TS]] = set()
+    closure: set[Item[NTS, TS]] = set()
+    new_closure = set(state)
     while closure != new_closure:
-        new_closure = closure.copy()
+        closure = new_closure.copy()
         for item in closure:
             match item.rhs_rest():
                 case [NT(nt), *rest]:
                     for lookahead in first_k(rest + list(item.lookahead)):
                         for rule in g.productions_with_lhs(nt):
                             new_closure.add(Item(rule, 0, lookahead))
-    return frozenset(closure)
+    return frozenset(new_closure)
 
 
 def goto(
@@ -53,16 +53,11 @@ def initial_state(
         g,
         k,
         first_k,
-        frozenset(
-            [
-                Item(rule, 0, ())
-                for rule in g.productions_with_lhs(g.start)
-            ]
-        ),
+        frozenset([Item(rule, 0, ()) for rule in g.productions_with_lhs(g.start)]),
     )
 
 
-def reducable_items(state: State, prefix: tuple[TS,...]) -> list[Item[NTS, TS]]:
+def reducable_items(state: State, prefix: tuple[TS, ...]) -> list[Item[NTS, TS]]:
     items = []
     for item in state:
         if len(item.rhs_rest()) == 0 and item.lookahead == prefix:
@@ -80,7 +75,7 @@ def next_terminals(state: State) -> frozenset[TS]:
 
 
 def nactive(state: State) -> int:
-    return max(map(lambda item: len(item.rhs_start()), state))
+    return max(map(lambda item: len(item.rhs_start()), state), default=0)
 
 
 def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> bool:
@@ -99,7 +94,7 @@ def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> bool:
         def c0(symbol: Symbol, inp: list[TS]) -> bool:
             next_state = goto(g, k, first_k, state, symbol)
             return rec_parse(
-                next_state, [c0] + continuations[: nactive(next_state)], inp
+                next_state, [c0] + continuations[: nactive(next_state)-1], inp
             )
 
         can_shift = len(inp) > 0 and inp[0] in next_terminals(state)
@@ -109,8 +104,8 @@ def parse(g: Grammar[NTS, TS], k: int, inp: list[TS]) -> bool:
         if can_shift:
             return c0(inp[0], inp[1:])
         if len(reducable) > 0:
-            return ([c0] + continuations)[len(reducable[0].rhs_rest())](
-                NT(reducable[0].lhs), inp
+            return ([c0] + continuations)[len(reducable[0].rhs())](
+                NT(reducable[0].lhs()), inp
             )
         return False
 
