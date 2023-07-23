@@ -67,6 +67,3 @@ class Var(AST):
 @dataclass(frozen=True)
 class Constant(AST):
     val: int
-
-
-### ###

@@ -1,9 +1,12 @@
+import sys
 from grammar import *
 from grammar_analysis import *
-from recursive_descent_parser import *
-import sys
+from typing import Iterator
+from ll_k_parser import parse_from_string as ll_k_parse_from_string
+
 
 ### left-recurive example grammar ###
+
 
 expr_grammar = Grammar[str, str](
     ["T", "E", "F"],
@@ -20,7 +23,9 @@ expr_grammar = Grammar[str, str](
     "T",
 )
 
+
 ### non-left-recursive equivalent of expr_grammar ###
+
 
 expr_grammar_ = Grammar[str, str](
     ["T", "T'", "E", "E'", "F"],
@@ -77,20 +82,15 @@ def td_parse_F(inp: str) -> Iterator[str]:
 ### first_1 sets calculation for expr_grammar_ ###
 
 
-pretty = lambda sets: {
-    key: {reduce(lambda x, y: x + y, v, "") for v in value}
-    for key, value in sets.items()
-}
-
 es = calculate_empty(expr_grammar_)
-fs = pretty(calculate_first(expr_grammar_, es))
+fs = pretty_string_lookaheads(calculate_first(expr_grammar_, es))
 
 
 ### first_1 sets calculation for expr_grammar_ using general method###
 
 
 first_1_analysis = FirstKAnalysis[str, str](1)
-first_1 = pretty(first_1_analysis.run(expr_grammar_))
+first_1 = pretty_string_lookaheads(first_1_analysis.run(expr_grammar_))
 
 
 ### using the LL(k) parser on expr_grammar_ ###
