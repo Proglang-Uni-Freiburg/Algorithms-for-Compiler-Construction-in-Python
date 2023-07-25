@@ -22,7 +22,6 @@ integer_literal_js = alternative(
     concat(sign, repeat_one(digit)),
     concat_list([sign, hexprefix, repeat_one(hexdigit)]),
 )
-
 lc_letter = alternative_list(map(Symbol, map(chr, range(ord("a"), ord("z") + 1))))
 uc_letter = alternative_list(map(Symbol, map(chr, range(ord("A"), ord("Z") + 1))))
 letter = alternative(lc_letter, uc_letter)

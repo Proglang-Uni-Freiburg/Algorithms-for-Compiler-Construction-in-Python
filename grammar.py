@@ -23,14 +23,6 @@ class Production(Generic[NTS, TS]):
     rhs: tuple[Symbol, ...]
     ext: Optional[Callable[..., Any]] = None
 
-    def arity(self) -> int:
-        counter = 0
-        for symbol in self.rhs:
-            match symbol:
-                case NT(nt):
-                    counter += 1
-        return counter
-
 
 @dataclass(frozen=True)
 class Grammar(Generic[NTS, TS]):
@@ -75,4 +67,9 @@ class Var(AST):
 
 @dataclass(frozen=True)
 class Constant(AST):
+    val: int
+
+
+@dataclass(frozen=True)
+class Ret(AST):
     val: int

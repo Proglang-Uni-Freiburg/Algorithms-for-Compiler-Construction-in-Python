@@ -24,11 +24,15 @@ class Item(Generic[NTS, TS]):
     def rhs_rest(self) -> list[Symbol]:
         return list(self.rule.rhs[self.position :])
 
-    def can_shift(self, symbol: Symbol) -> bool:
-        return (
-            self.position < len(self.rule.rhs)
-            and self.rule.rhs[self.position] == symbol
-        )
+
+def equality(x: Any, y: Any) -> bool:
+    return x == y
+
+
+def can_shift(item, symbol: Symbol, cmp: Callable[[Any, Any], bool] = equality) -> bool:
+    return item.position < len(item.rule.rhs) and cmp(
+        item.rule.rhs[item.position], symbol
+    )
 
 
 def shift_item(item: Item) -> Item:
@@ -56,7 +60,7 @@ def compute_closure(g: Grammar[NTS, TS], state: State) -> State:
 
 def goto(g: Grammar[NTS, TS], state: State, symbol: Symbol) -> State:
     return compute_closure(
-        g, frozenset([shift_item(item) for item in state if item.can_shift(symbol)])
+        g, frozenset([shift_item(item) for item in state if can_shift(item, symbol)])
     )
 
 
@@ -92,9 +96,9 @@ def parse(g: Grammar[NTS, TS], inp: list[TS]) -> bool:
 
         shiftable = []
         if len(inp) > 0:
-            shiftable = [item for item in state if item.can_shift(inp[0])]
+            shiftable = [item for item in state if can_shift(item, inp[0])]
         reducable: list[Item[NTS, TS]] = reducable_items(state)
-        if len(reducable) + len(shiftable) > 1:
+        if len(reducable) + (shiftable != []) > 1:
             print("Grammar is not LR(0)")
         if len(shiftable) > 0:
             return shift(shiftable[0].rhs_rest()[0], stack, inp[1:])

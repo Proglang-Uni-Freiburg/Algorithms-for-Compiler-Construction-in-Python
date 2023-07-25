@@ -16,12 +16,12 @@ expr_grammar = Grammar[str, str](
     ("x", "2", "(", ")", "+", "*"),
     (
         Production("T", (NT("E"),), lambda e: e),
-        Production("T", (NT("T"), "+", NT("E")), lambda t, e: BinOp(t, "+", e)),
+        Production("T", (NT("T"), "+", NT("E")), lambda t, op, e: BinOp(t, op, e)),
         Production("E", (NT("F"),), lambda f: f),
-        Production("E", (NT("E"), "*", NT("F")), lambda e, f: BinOp(e, "*", f)),
-        Production("F", ("x",), lambda: Var("x")),
-        Production("F", ("2",), lambda: Constant(2)),
-        Production("F", ("(", NT("T"), ")"), lambda t: t),
+        Production("E", (NT("E"), "*", NT("F")), lambda e, op, f: BinOp(e, op, f)),
+        Production("F", ("x",), lambda x: Var(x)),
+        Production("F", ("2",), lambda two: Constant(two)),
+        Production("F", ("(", NT("T"), ")"), lambda l, t, r: t),
     ),
     "T",
 )
@@ -106,8 +106,8 @@ if __name__ == "__main__":
     result: Any = ll_k_parse_from_string(expr_grammar_, 1, arg)
     print(f"LL(k)-parsed '{result[0]}' with rest '{result[1]}'")
     start_separated_grammar = start_separated(expr_grammar, "S'")
-    # expr_grammar is not LR(0) thus
+    # expr_grammar is not LR(0)
     # result = lr_0_parse_from_string(start_separated_grammar, arg)
     # print(f"LR(0)-parsed '{result}'")
     result = lr_k_parse_from_string(start_separated_grammar, 1, arg)
-    print(f"LL(k)-parsed '{result}'")
+    print(f"LR(k)-parsed '{result[0]}' with parse tree '{result[1]}'")

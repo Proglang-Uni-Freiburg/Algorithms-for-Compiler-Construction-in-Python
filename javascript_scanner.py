@@ -30,8 +30,8 @@ class Rparen(Token):
 
 
 @dataclass(frozen=True)
-class Slash(Token):
-    pass
+class BinaryOp(Token):
+    op: str
 
 
 @dataclass(frozen=True)
@@ -39,6 +39,7 @@ class Strlit(Token):
     value: str
 
 
+binop = class_regexp("+*/")  # minus is excluded to avoid ambiguities
 digit = char_range_regexp("0", "9")
 hexdigit = alternative_list(
     [digit, char_range_regexp("A", "F"), char_range_regexp("a", "f")]
@@ -49,7 +50,6 @@ integer_literal = alternative(
     concat(sign, repeat_one(digit)),
     concat_list([sign, hexprefix, repeat_one(hexdigit)]),
 )
-
 letter = alternative(char_range_regexp("A", "Z"), char_range_regexp("a", "z"))
 identifier_start = alternative_list([letter, Symbol("$"), Symbol("_")])
 identifier_part = alternative(identifier_start, digit)
@@ -96,7 +96,7 @@ js_spec: LexState = [
     LexRule(white_space, lambda ss, i, j: js_token(ss, j)),
     LexRule(Symbol("("), lambda ss, i, j: (Lparen(), j)),
     LexRule(Symbol(")"), lambda ss, i, j: (Rparen(), j)),
-    LexRule(Symbol("/"), lambda ss, i, j: (Slash(), j)),
+    LexRule(binop, lambda ss, i, j: (BinaryOp(ss[i:j]), j)),
     LexRule(string_literal, lambda ss, i, j: (strlit(ss[i + 1 : j - 1]), j)),
 ]
 
@@ -122,9 +122,9 @@ def example2() -> None:
 
 
 def example3() -> None:
-    string = "return Segment (pi / 2)"
+    string = 'return "foobar\\"..."'
     print(f'Example 3 with "{string}"')
-    sc = make_scanner(js_token, 'return "foobar\\"..."')
+    sc = make_scanner(js_token, string)
     for ta in sc:
         print(ta)
 
