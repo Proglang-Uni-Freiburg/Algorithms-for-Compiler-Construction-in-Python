@@ -52,4 +52,4 @@ if __name__ == "__main__":
     else:
         arg = sys.argv[1]
     result = lex_and_parse(arg)
-    print(f"LR(k)-parsed '{result[0]}' with parse tree '{result[1]}'")
+    print(f"LR(k)-parsed '{result[0]}' with AST '{result[1]}'")

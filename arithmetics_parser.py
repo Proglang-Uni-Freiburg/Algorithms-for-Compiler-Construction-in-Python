@@ -110,4 +110,4 @@ if __name__ == "__main__":
     # result = lr_0_parse_from_string(start_separated_grammar, arg)
     # print(f"LR(0)-parsed '{result}'")
     result = lr_k_parse_from_string(start_separated_grammar, 1, arg)
-    print(f"LR(k)-parsed '{result[0]}' with parse tree '{result[1]}'")
+    print(f"LR(k)-parsed '{result[0]}' with AST '{result[1]}'")
