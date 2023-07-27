@@ -35,13 +35,13 @@ def goto(
     first_k: Callable[[list[Symbol]], Lookaheads],
     state: State,
     symbol: Symbol,
-    cmp: Callable[[Any, Any], bool],
+    eq: Callable[[TS, TS], bool],
 ) -> State:
     return compute_closure(
         g,
         k,
         first_k,
-        frozenset([shift_item(item) for item in state if can_shift(item, symbol, cmp)]),
+        frozenset([shift_item(item) for item in state if can_shift(item, symbol, eq)]),
     )
 
 
@@ -60,12 +60,12 @@ def initial_state(
 
 
 def reducable_items(
-    state: State, prefix: tuple[TS, ...], cmp: Callable[[Any, Any], bool]
+    state: State, prefix: tuple[TS, ...], eq: Callable[[TS, TS], bool]
 ) -> list[Item[NTS, TS]]:
     items = []
     for item in state:
         if len(item.rhs_rest()) == 0 and len(item.lookahead) == len(prefix):
-            if any(not cmp(l, p) for l, p in zip(item.lookahead, prefix)):
+            if any(not eq(l, p) for l, p in zip(item.lookahead, prefix)):
                 continue
             items.append(item)
     return items
@@ -79,8 +79,8 @@ def parse(
     g: Grammar[NTS, TS],
     k: int,
     inp: list[TS],
-    # comparison function nessecary for tokens when using lexer with paser
-    cmp: Callable[[Any, Any], bool] = equality,
+    # TS equality function (e.g. tokens need type equality other than strings)
+    eq: Callable[[TS, TS], bool] = equality,
 ) -> tuple[bool, Any]:
     fika = FirstKAnalysis[NTS, TS](k)
     first_k_nt = fika.run(g)
@@ -102,16 +102,16 @@ def parse(
             symbol: Symbol,
             inp: list[TS],
         ) -> bool:
-            next_state = goto(g, k, first_k, state, symbol, cmp)
+            next_state = goto(g, k, first_k, state, symbol, eq)
             return rec_parse(
                 next_state, [c0] + continuations[: nactive(next_state) - 1], inp
             )
 
         shiftable = []
         if len(inp) > 0:
-            shiftable = [item for item in state if can_shift(item, inp[0], cmp)]
+            shiftable = [item for item in state if can_shift(item, inp[0], eq)]
         reducable = cast(
-            list[Item[NTS, TS]], reducable_items(state, tuple(inp[:k]), cmp)
+            list[Item[NTS, TS]], reducable_items(state, tuple(inp[:k]), eq)
         )
         if len(reducable) + (shiftable != []) > 1:
             print("Grammar is not LR(" + str(k) + ")")
@@ -125,7 +125,9 @@ def parse(
             # constructing the parse structure
             arity = len(rule.rhs)
             construct = (
-                None if rule.ext is None else rule.ext(*constructs[:arity][::-1])
+                None  # default construct is None if rule.ext is None
+                if rule.ext is None
+                else rule.ext(*constructs[:arity][::-1])
             )
             constructs = [construct] + constructs[arity:]
             # calling the continuation
@@ -141,10 +143,8 @@ def parse_from_string(g: Grammar[NTS, str], k: int, inp: str) -> tuple[bool, Any
     return parse(g, k, list(inp))
 
 
-def token_equality(x: Union[NTS, Token], y: Union[NTS, Token]) -> bool:
-    if isinstance(x, Token) and isinstance(y, Token):
-        return type(x) == type(y)
-    return x == y
+def token_equality(x: Token, y: Token) -> bool:
+    return type(x) == type(y)
 
 
 # convenience

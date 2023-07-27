@@ -3,6 +3,38 @@ from typing import Callable, Iterator
 from regexp import *
 
 
+"""
+Lexer descriptions:
+
+A lexer (scanner) is different from a finite automaton in several aspects.
+
+1. The lexer must classify the next lexeme from a choice of several regular expressions.
+   It cannot match a single regexp, but it has to keep track and manage matching for
+   several regexps at the same time.
+2. The lexer follows the `maximum munch` rule, which says that the next lexeme is
+   the longest prefix that matches one of the regular expressions.
+3. Once a lexeme is identified, the lexer must turn it into a token and attribute.
+
+Re maximum munch consider this input:
+
+ifoundsalvationinapubliclavatory
+
+Suppose that `if` is a keyword, why should the lexer return <identifier> for this input?
+
+Similarly:
+
+returnSegment
+
+would count as an identifier even though starting with the keyword `return`.
+
+These requirements motivate the following definitions.
+
+A lex_action 
+* takes some (s : str, i : int position in s, j : int pos in s)
+* consumes the lexeme sitting at s[i:j]
+* returns (token for s[i:j], some k >= j)
+"""
+
 ### types and classes ###
 
 
@@ -35,7 +67,7 @@ class ScanError(Exception):
     pass
 
 
-### properties and functions ###
+### scanner ###
 
 
 def is_stuck(state: LexState) -> bool:
@@ -53,9 +85,6 @@ def next_state(state: LexState, ss: str, i: int) -> LexState:
 
 def matched_rules(state: LexState) -> LexState:
     return [rule for rule in state if accepts_empty(rule.re)]
-
-
-### scanner ###
 
 
 @dataclass

@@ -21,6 +21,7 @@ Symbol = Union[NT[NTS], TS]
 class Production(Generic[NTS, TS]):
     lhs: NTS
     rhs: tuple[Symbol, ...]
+    # should take len(rhs) arguments if present
     ext: Optional[Callable[..., Any]] = None
 
 

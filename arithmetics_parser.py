@@ -86,7 +86,7 @@ def td_parse_F(inp: str) -> Iterator[str]:
 
 
 es = calculate_empty(expr_grammar_)
-fs = pretty_string_lookaheads(calculate_first(expr_grammar_, es))
+fs = pretty_string_lookaheads(calculate_first(expr_grammar_, "", es))
 
 
 ### first_1 sets calculation for expr_grammar_ using general method###

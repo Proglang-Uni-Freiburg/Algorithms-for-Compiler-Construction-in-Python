@@ -25,14 +25,22 @@ class Item(Generic[NTS, TS]):
         return list(self.rule.rhs[self.position :])
 
 
-def equality(x: Any, y: Any) -> bool:
+def equality(x: TS, y: TS) -> bool:
     return x == y
 
 
-def can_shift(item, symbol: Symbol, cmp: Callable[[Any, Any], bool] = equality) -> bool:
-    return item.position < len(item.rule.rhs) and cmp(
-        item.rule.rhs[item.position], symbol
-    )
+def can_shift(item, symbol: Symbol, eq: Callable[[TS, TS], bool] = equality) -> bool:
+    if item.position >= len(item.rule.rhs):
+        return False
+    rhs_symbol = item.rule.rhs[item.position]
+    match (rhs_symbol, symbol):
+        case (NT(nt1), NT(nt2)):
+            return nt1 == nt2
+        case (NT(nt), ts) | (ts, NT(nt)):
+            return False
+        case (ts1, ts2):
+            return eq(ts1, cast(TS, ts2))
+    raise Exception(f"Unexpected case: {(rhs_symbol, symbol)}")
 
 
 def shift_item(item: Item) -> Item:
@@ -90,7 +98,7 @@ def parse(g: Grammar[NTS, TS], inp: list[TS]) -> bool:
     def rec_parse(stack: list[State], inp: list[TS]) -> bool:
         state = stack[-1]
         # len(stack) == 2 because the starting rule item will be completed after exactly
-        # one shift i.e. adding one additional state the stack
+        # one shift i.e. adding one additional state to the stack
         if is_final(g, state) and len(stack) == 2 and len(inp) == 0:
             return True
 

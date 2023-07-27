@@ -3,6 +3,20 @@ from functools import reduce
 from typing import cast, Iterable
 
 
+"""
+The first phase of a compiler is called `lexical analysis` implemented by a `scanner` or `lexer`.
+It breaks a program into a sequence `lexemes`: 
+    meaningful substrings of the input.
+It also transforms lexemes into `tokens`: 
+    symbolic representations of lexemes with some internalized information.
+
+The classic, state-of-the-art method to specify lexemes is by regular expressions.
+"""
+
+"""
+Representation of regular expressions.
+"""
+
 ### types and classes ###
 
 
@@ -55,7 +69,7 @@ class Repeat(Regexp):
     body: Regexp
 
 
-### constructors and utilities ###
+### constructors and conviniences ###
 
 
 def concat(r1: Regexp, r2: Regexp) -> Regexp:
@@ -149,6 +163,21 @@ def accepts_empty(r: Regexp) -> bool:
     raise Exception(f"Unexpected case: {r}")
 
 
+"""
+The transition function of a (deterministic) finite automaton maps 
+state `r0` and symbol `s` to the next state, say, `r1`.
+If the state `r0` recognizes any words `w` that start with `s` (w[0] == s),
+then state `r1` recognizes all those words `w` with the first letter removed (w[1:]).
+This construction is called the `derivative` of a language by symbol `s`:
+
+derivative(L, s) = { w[1:] | w in L and w[0] == s }
+
+If L is the language recognized by regular expression `r0`, 
+then we can effectively compute a regular expression for derivative(L, s)!
+As follows:
+"""
+
+
 def after_symbol(s: str, r: Regexp) -> Regexp:
     """produces regexp after r consumes symbol s"""
     match r:
@@ -166,6 +195,18 @@ def after_symbol(s: str, r: Regexp) -> Regexp:
         case Repeat(r1):
             return concat(after_symbol(s, r1), Repeat(r1))
     raise Exception(f"Unexpected case: {r}")
+
+
+"""
+Executing regular expressions:
+
+The standard method to 'execute' regular expressions is to transform them into finite automata.
+Here we use a different method to execute them directly using `derivatives`.
+This method uses regular expressions themselves as states of an automaton without constructing it.
+
+We consider a regexp a final state if it accepts the empty word "".
+This condition can be checked by a simple function on the regexp.
+"""
 
 
 def matches(r: Regexp, ss: str) -> bool:
