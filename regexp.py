@@ -69,7 +69,16 @@ class Repeat(Regexp):
     body: Regexp
 
 
-### constructors and conviniences ###
+"""
+Smart constructors for regular expressions
+goal: construct regexps in "normal form"
+    * avoid Null() subexpressions
+    * Epsilon() subexpressions as much as possible
+    * nest concatenation and alternative to the right
+"""
+
+null = Null()
+epsilon = Epsilon()
 
 
 def concat(r1: Regexp, r2: Regexp) -> Regexp:
@@ -101,15 +110,18 @@ def alternative(r1: Regexp, r2: Regexp) -> Regexp:
 def repeat(r: Regexp) -> Regexp:
     match r:
         case Null() | Epsilon():
-            return Epsilon()
+            return epsilon
         case Repeat(r1):
             return r
         case _:
             return Repeat(r)
 
 
+### convinience ###
+
+
 def optional(r: Regexp) -> Regexp:
-    return alternative(r, Epsilon())
+    return alternative(r, epsilon)
 
 
 def repeat_one(r: Regexp) -> Regexp:
@@ -117,11 +129,11 @@ def repeat_one(r: Regexp) -> Regexp:
 
 
 def concat_list(rs: Iterable[Regexp]) -> Regexp:
-    return reduce(lambda out, r: concat(out, r), rs, cast(Regexp, Epsilon()))
+    return reduce(lambda out, r: concat(out, r), rs, cast(Regexp, epsilon))
 
 
 def alternative_list(rs: Iterable[Regexp]) -> Regexp:
-    return reduce(lambda out, r: alternative(out, r), rs, cast(Regexp, Null()))
+    return reduce(lambda out, r: alternative(out, r), rs, cast(Regexp, null))
 
 
 def char_range_regexp(c1: str, c2: str) -> Regexp:
@@ -182,15 +194,15 @@ def after_symbol(s: str, r: Regexp) -> Regexp:
     """produces regexp after r consumes symbol s"""
     match r:
         case Null() | Epsilon():
-            return Null()
+            return null
         case Symbol(s_expected):
-            return Epsilon() if s == s_expected else Null()
+            return epsilon if s == s_expected else null
         case Alternative(r1, r2):
             return alternative(after_symbol(s, r1), after_symbol(s, r2))
         case Concat(r1, r2):
             return alternative(
                 concat(after_symbol(s, r1), r2),
-                after_symbol(s, r2) if accepts_empty(r1) else Null(),
+                after_symbol(s, r2) if accepts_empty(r1) else null,
             )
         case Repeat(r1):
             return concat(after_symbol(s, r1), Repeat(r1))
@@ -210,6 +222,7 @@ This condition can be checked by a simple function on the regexp.
 
 
 def matches(r: Regexp, ss: str) -> bool:
+    """determins whether string ss is in the language of the regular expression r"""
     i = 0
     while i < len(ss):
         r = after_symbol(ss[i], r)

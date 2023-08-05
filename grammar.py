@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar, Any, Union, Generic, cast, Callable, Optional
+from typing import TypeVar, Any, Union, Generic, Callable, Optional
 
 
 ### context free grammars ###
@@ -44,33 +44,3 @@ def start_separated(g: Grammar[NTS, TS], new_start: NTS) -> Grammar[NTS, TS]:
         g.rules + (new_production,),
         new_start,
     )
-
-
-### abstract syntax for arithmetic expressions ###
-
-
-@dataclass(frozen=True)
-class AST:
-    pass
-
-
-@dataclass(frozen=True)
-class BinOp(AST):
-    left: AST
-    binop: str
-    right: AST
-
-
-@dataclass(frozen=True)
-class Var(AST):
-    name: str
-
-
-@dataclass(frozen=True)
-class Constant(AST):
-    val: int
-
-
-@dataclass(frozen=True)
-class Ret(AST):
-    val: int

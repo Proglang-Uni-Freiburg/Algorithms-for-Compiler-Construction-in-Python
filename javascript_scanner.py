@@ -74,7 +74,7 @@ string_spec: LexState = [
     LexRule(content_char, lambda ss, i, j: (Strlit(ss[i]), j)),
 ]
 
-string_token = Scan(string_spec).scan_one()
+string_token = Scan(string_spec)
 
 
 def strlit(ss: str) -> Strlit:
@@ -100,7 +100,7 @@ js_spec: LexState = [
     LexRule(string_literal, lambda ss, i, j: (strlit(ss[i + 1 : j - 1]), j)),
 ]
 
-js_token: Callable[[str, Position], LexResult] = Scan(js_spec).scan_one()
+js_token: Callable[[str, Position], LexResult] = Scan(js_spec)
 
 
 def scan(ss: str) -> Iterator[Token]:

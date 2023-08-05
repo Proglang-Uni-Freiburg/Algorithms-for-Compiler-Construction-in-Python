@@ -2,6 +2,7 @@ import sys
 from grammar import *
 from typing import Any
 from javascript_scanner import *
+from arithmetics_parser import AST, Var, Const, Ret, BinOp
 from lr_k_parser import parse_from_tokens as lr_k_parse_from_tokens
 
 ### full lexer and parser based on the javascript literals ###
@@ -32,7 +33,7 @@ grammar = Grammar[str, Token](
             "T", (NT("T"), binaryop, NT("F")), lambda t, b, f: BinOp(t, b.op, f)
         ),
         Production("F", (ident,), lambda i: Var(i.name)),
-        Production("F", (intlit,), lambda i: Constant(i.value)),
+        Production("F", (intlit,), lambda i: Const(i.value)),
         Production("F", (lparen, NT("T"), rparen), lambda l, t, r: t),
     ),
     "S",

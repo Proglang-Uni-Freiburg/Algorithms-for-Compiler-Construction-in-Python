@@ -87,14 +87,12 @@ def matched_rules(state: LexState) -> LexState:
     return [rule for rule in state if accepts_empty(rule.re)]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Scan:
     spec: LexState
 
-    def scan_one(self) -> Callable[[str, Position], LexResult]:
-        return lambda ss, i: self.scan_one_token(ss, i)
-
-    def scan_one_token(self, ss: str, i: Position) -> LexResult:
+    def __call__(self, ss: str, i: Position) -> LexResult:
+        """returns a Token and its end position j starting at position i in ss (j > i)"""
         state = self.spec
         j = i
         last_match = None
@@ -116,6 +114,7 @@ class Scan:
 def make_scanner(
     scan_one: Callable[[str, Position], LexResult], ss: str
 ) -> Iterator[Token]:
+    """applyies scan_one to ss and yields the resulting token until all of ss is consumed"""
     i = 0
     while i < len(ss):
         (token, i) = scan_one(ss, i)

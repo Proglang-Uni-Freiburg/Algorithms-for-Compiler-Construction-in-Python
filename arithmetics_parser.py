@@ -7,6 +7,36 @@ from lr_0_parser import parse_from_string as lr_0_parse_from_string
 from lr_k_parser import parse_from_string as lr_k_parse_from_string
 
 
+### abstract syntax for arithmetic expressions ###
+
+
+@dataclass(frozen=True)
+class AST:
+    pass
+
+
+@dataclass(frozen=True)
+class Var(AST):
+    value: str
+
+
+@dataclass(frozen=True)
+class Const(AST):
+    value: int
+
+
+@dataclass(frozen=True)
+class Ret(AST):
+    value: int
+
+
+@dataclass(frozen=True)
+class BinOp(AST):
+    left: AST
+    op: str
+    right: AST
+
+
 ### left-recurive example grammar ###
 
 
@@ -20,7 +50,7 @@ expr_grammar = Grammar[str, str](
         Production("E", (NT("F"),), lambda f: f),
         Production("E", (NT("E"), "*", NT("F")), lambda e, op, f: BinOp(e, op, f)),
         Production("F", ("x",), lambda x: Var(x)),
-        Production("F", ("2",), lambda two: Constant(two)),
+        Production("F", ("2",), lambda two: Const(two)),
         Production("F", ("(", NT("T"), ")"), lambda l, t, r: t),
     ),
     "T",
@@ -103,11 +133,11 @@ if __name__ == "__main__":
         print(first_1)
         exit()
     arg = sys.argv[1]
-    result: Any = ll_k_parse_from_string(expr_grammar_, 1, arg)
-    print(f"LL(k)-parsed '{result[0]}' with rest '{result[1]}'")
+    ll_k_result = ll_k_parse_from_string(expr_grammar_, 1, arg)
+    print(f"LL(k)-parsed '{ll_k_result}'")
     start_separated_grammar = start_separated(expr_grammar, "S'")
     # expr_grammar is not LR(0)
-    # result = lr_0_parse_from_string(start_separated_grammar, arg)
-    # print(f"LR(0)-parsed '{result}'")
-    result = lr_k_parse_from_string(start_separated_grammar, 1, arg)
-    print(f"LR(k)-parsed '{result[0]}' with AST '{result[1]}'")
+    # lr_0_result = lr_0_parse_from_string(start_separated_grammar, arg)
+    # print(f"LR(0)-parsed '{lr_0_result}'")
+    lr_k_result = lr_k_parse_from_string(start_separated_grammar, 1, arg)
+    print(f"LR(k)-parsed '{lr_k_result[0]}' with AST '{lr_k_result[1]}'")

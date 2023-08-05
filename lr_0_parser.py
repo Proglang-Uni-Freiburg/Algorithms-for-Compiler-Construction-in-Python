@@ -1,6 +1,8 @@
 from grammar import *
 from dataclasses import dataclass
+from ll_k_parser import equality, token_equality
 from typing import cast
+from scanner import Token
 
 
 ### items for recursive-ascent-parsers ###
@@ -23,10 +25,6 @@ class Item(Generic[NTS, TS]):
 
     def rhs_rest(self) -> list[Symbol]:
         return list(self.rule.rhs[self.position :])
-
-
-def equality(x: TS, y: TS) -> bool:
-    return x == y
 
 
 def can_shift(item, symbol: Symbol, eq: Callable[[TS, TS], bool] = equality) -> bool:
@@ -66,9 +64,12 @@ def compute_closure(g: Grammar[NTS, TS], state: State) -> State:
     return frozenset(new_closure)
 
 
-def goto(g: Grammar[NTS, TS], state: State, symbol: Symbol) -> State:
+def goto(
+    g: Grammar[NTS, TS], state: State, symbol: Symbol, eq: Callable[[TS, TS], bool]
+) -> State:
     return compute_closure(
-        g, frozenset([shift_item(item) for item in state if can_shift(item, symbol)])
+        g,
+        frozenset([shift_item(item) for item in state if can_shift(item, symbol, eq)]),
     )
 
 
@@ -94,17 +95,19 @@ def is_final(g: Grammar[NTS, TS], state: State) -> bool:
     return False
 
 
-def parse(g: Grammar[NTS, TS], inp: list[TS]) -> bool:
+def parse(
+    g: Grammar[NTS, TS], inp: list[TS], eq: Callable[[TS, TS], bool] = equality
+) -> bool:
     def rec_parse(stack: list[State], inp: list[TS]) -> bool:
         state = stack[-1]
-        # len(stack) == 2 because the starting rule item will be completed after exactly
-        # one shift i.e. adding one additional state to the stack
+        # We accept if len(stack) == 2 because the initial item S' -> .S will be
+        # completed after exactly one shift i.e. adding one additional state to the stack.
         if is_final(g, state) and len(stack) == 2 and len(inp) == 0:
             return True
 
         shiftable = []
         if len(inp) > 0:
-            shiftable = [item for item in state if can_shift(item, inp[0])]
+            shiftable = [item for item in state if can_shift(item, inp[0], eq)]
         reducable: list[Item[NTS, TS]] = reducable_items(state)
         if len(reducable) + (shiftable != []) > 1:
             print("Grammar is not LR(0)")
@@ -117,11 +120,16 @@ def parse(g: Grammar[NTS, TS], inp: list[TS]) -> bool:
 
     def shift(symbol: Symbol, stack: list[State], inp: list[TS]) -> bool:
         state = stack[-1]
-        return rec_parse(stack + [goto(g, state, symbol)], inp)
+        return rec_parse(stack + [goto(g, state, symbol, equality)], inp)
 
     return rec_parse([initial_state(g)], inp)
 
 
 # convenience
 def parse_from_string(g: Grammar[NTS, str], inp: str) -> bool:
-    return parse(g, list(inp))
+    return parse(g, list(inp), equality)
+
+
+# convenience
+def parse_from_tokens(g: Grammar[NTS, Token], inp: list[Token]) -> bool:
+    return parse(g, inp, token_equality)

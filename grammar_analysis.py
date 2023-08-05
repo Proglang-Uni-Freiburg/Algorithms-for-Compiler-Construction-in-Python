@@ -17,9 +17,7 @@ def map_eq(old: dict[Key, Value], current: dict[Key, Value]) -> bool:
     return all(old[k] == current[k] for k in old)
 
 
-def fixed_point(
-    current: T, update: Callable[[T], T], eq: Callable[[T, T], bool]
-) -> T:
+def fixed_point(current: T, update: Callable[[T], T], eq: Callable[[T, T], bool]) -> T:
     old: Optional[T] = None
     while old is None or not eq(old, current):
         old = current
@@ -65,7 +63,9 @@ def initial_first(g: Grammar[NTS, TS]) -> FirstSet:
     return {n: frozenset() for n in g.nonterminals}
 
 
-def first(epsilon: TS, es: EmptySet, fs: FirstSet, alpha: list[Symbol]) -> frozenset[TS]:
+def first(
+    epsilon: TS, es: EmptySet, fs: FirstSet, alpha: list[Symbol]
+) -> frozenset[TS]:
     match alpha:
         case [NT(nt), *rest] if es[nt]:
             return fs[nt] | first(epsilon, es, fs, rest)
@@ -78,7 +78,9 @@ def first(epsilon: TS, es: EmptySet, fs: FirstSet, alpha: list[Symbol]) -> froze
     raise Exception(f"Unexpected case: {alpha}")
 
 
-def update_first(g: Grammar[NTS, TS], epsilon: TS, es: EmptySet, fs: FirstSet) -> FirstSet:
+def update_first(
+    g: Grammar[NTS, TS], epsilon: TS, es: EmptySet, fs: FirstSet
+) -> FirstSet:
     fs = fs.copy()
     for n in g.nonterminals:
         fn = fs[n]
@@ -128,7 +130,9 @@ class GrammarAnalysis(Generic[NTS, TS, Element]):
     def initial_analysis(self, g: Grammar[NTS, TS]) -> dict[NTS, Element]:
         raise NotImplementedError
 
-    def update_analysis(self, g: Grammar[NTS, TS], fs: dict[NTS, Element]) -> dict[NTS, Element]:
+    def update_analysis(
+        self, g: Grammar[NTS, TS], fs: dict[NTS, Element]
+    ) -> dict[NTS, Element]:
         raise NotImplementedError
 
     def rhs_analysis(self, fs: dict[NTS, Element], alpha: list[Symbol]) -> Element:
@@ -147,14 +151,16 @@ class GrammarAnalysis(Generic[NTS, TS, Element]):
         return fixed_point(initial_map, update_map, map_eq)
 
 
-Lookaheads = frozenset[tuple[TS,...]]
+Lookaheads = frozenset[tuple[TS, ...]]
 
 
 # convinience for printing str instantiated Lookaheads
-pretty_string_lookaheads = lambda sets: str({
-    key: {reduce(lambda x, y: x + y, v, "") for v in value}
-    for key, value in sets.items()
-})
+pretty_string_lookaheads = lambda sets: str(
+    {
+        key: {reduce(lambda x, y: x + y, v, "") for v in value}
+        for key, value in sets.items()
+    }
+)
 
 
 @dataclass(frozen=True)

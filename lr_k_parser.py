@@ -3,6 +3,7 @@ from grammar_analysis import *
 from dataclasses import dataclass
 from functools import partial
 from typing import Callable, cast
+from ll_k_parser import equality, token_equality
 from lr_0_parser import is_final, State, Item, shift_item, can_shift, equality
 from scanner import Token
 
@@ -65,9 +66,8 @@ def reducable_items(
     items = []
     for item in state:
         if len(item.rhs_rest()) == 0 and len(item.lookahead) == len(prefix):
-            if any(not eq(l, p) for l, p in zip(item.lookahead, prefix)):
-                continue
-            items.append(item)
+            if all(eq(l, p) for l, p in zip(item.lookahead, prefix)):
+                items.append(item)
     return items
 
 
@@ -135,16 +135,12 @@ def parse(
         return False
 
     result = rec_parse(initial_state(g, k, first_k), [], inp)
-    return result, constructs if result else None
+    return result, constructs[0] if result else None
 
 
 # convenience
 def parse_from_string(g: Grammar[NTS, str], k: int, inp: str) -> tuple[bool, Any]:
-    return parse(g, k, list(inp))
-
-
-def token_equality(x: Token, y: Token) -> bool:
-    return type(x) == type(y)
+    return parse(g, k, list(inp), equality)
 
 
 # convenience
