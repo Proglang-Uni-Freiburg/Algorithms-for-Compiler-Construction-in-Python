@@ -160,15 +160,16 @@ complex_grammar = Grammar[str, Token](
     ),
     (
         Production(
-            "Module", (NT("Stmt"), NT("Module")), lambda s, m: Module([s] + m.stmts)
+            "Module", (NT("Stmt"), NT("Module")), lambda s, m: Module(s + m.stmts)
         ),
         Production("Module", (), lambda: Module([])),
-        Production("Stmt", (Print, NT("Exp"), End), lambda p, exp, end: Prnt(exp)),
-        Production("Stmt", (Return, NT("Exp"), End), lambda r, exp, end: Ret(exp)),
+        Production("Stmt", (End,), lambda end: []),
+        Production("Stmt", (Print, NT("Exp"), End), lambda p, exp, end: [Prnt(exp)]),
+        Production("Stmt", (Return, NT("Exp"), End), lambda r, exp, end: [Ret(exp)]),
         Production(
             "Stmt",
             (Identifier, Assign, NT("Exp"), End),
-            lambda i, a, exp, end: Let(i.value, exp),
+            lambda i, a, exp, end: [Let(i.value, exp)],
         ),
         Production("Exp", (Number,), lambda n: Const(n.value)),
         Production("Exp", (Identifier,), lambda i: Var(i.value)),
@@ -282,6 +283,19 @@ def test_complex_ast(capfd):
         True,
         Module([Ret(BinOp(Const(1), "+", BinRel(Const(2), "<=", Const(3))))]),
     )
+    assert parse(1, "    return 1 + (2 <= 3);    ") == (
+        True,
+        Module([Ret(BinOp(Const(1), "+", BinRel(Const(2), "<=", Const(3))))]),
+    )
+    assert parse(1, "return 1 + (2 <= 3);return 1+1;;;;") == (
+        True,
+        Module(
+            [
+                Ret(BinOp(Const(1), "+", BinRel(Const(2), "<=", Const(3)))),
+                Ret(BinOp(Const(1), "+", Const(1))),
+            ]
+        ),
+    )
     assert parse(1, "return (1 + 2) <= 3;") == (
         True,
         Module([Ret(BinRel(BinOp(Const(1), "+", Const(2)), "<=", Const(3)))]),
@@ -300,6 +314,7 @@ def test_complex_ast(capfd):
     assert parse(1, "return 1 + (2 <= 4));") == (False, None)
     assert parse(1, "return 1 ++ (2 <= 4);") == (False, None)
     assert parse(1, "return <= (2 + 4);") == (False, None)
+    assert parse(1, "return 1 + (2 <= 3) return 1+1;;;;") == (False, None)
     assert parse(1, "return if i then if j then 0 else 1;") == (False, None)
     out, err = capfd.readouterr()
     assert "not LR(1)" not in out
